@@ -1,0 +1,20 @@
+# Rust
+target/
+Cargo.lock
+
+# Go
+examples/go/client/client
+examples/go/middleware/middleware
+templates/gateway-template/x402-gateway
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Environment
+.env
+.DS_Store
