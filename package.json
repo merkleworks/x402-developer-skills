@@ -1,6 +1,6 @@
 {
   "name": "@merkleworks/x402-skills",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "AI developer skills for implementing the x402 stateless settlement-gated HTTP protocol",
   "bin": {
     "x402-skills": "cli/index.js"

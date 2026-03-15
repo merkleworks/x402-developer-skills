@@ -29,29 +29,29 @@ When ambiguity exists: `protocol spec > reference implementation > these skills`
 
 ```
 skills/
-  protocol/           Protocol architecture and mechanics
-    explain-x402-protocol.md
-    architecture-overview.md
-    protocol-flow.md
-    deterministic-binding.md
-    replay-protection.md
-  client/             Building x402 clients
-    build-x402-client.md
-    call-x402-api.md
-    construct-payment-transaction.md
-  server/             Server-side integration
-    add-x402-to-http-api.md
-    implement-gateway.md
-    verify-payment-proof.md
-  infrastructure/     Deploying and operating components
-    run-x402-gateway.md
-    run-delegator.md
-    operate-nonce-mint.md
-  security/           Protocol invariant enforcement
-    validate-proof.md
-    detect-double-spend.md
-    enforce-request-binding.md
-  discovery/          Service discovery
+  protocol/                          Protocol architecture and mechanics
+    explain-x402-protocol/SKILL.md
+    architecture-overview/SKILL.md
+    protocol-flow/SKILL.md
+    deterministic-binding/SKILL.md
+    replay-protection/SKILL.md
+  client/                            Building x402 clients
+    build-x402-client/SKILL.md
+    call-x402-api/SKILL.md
+    construct-payment-transaction/SKILL.md
+  server/                            Server-side integration
+    add-x402-to-http-api/SKILL.md
+    implement-gateway/SKILL.md
+    verify-payment-proof/SKILL.md
+  infrastructure/                    Deploying and operating components
+    run-x402-gateway/SKILL.md
+    run-delegator/SKILL.md
+    operate-nonce-mint/SKILL.md
+  security/                          Protocol invariant enforcement
+    validate-proof/SKILL.md
+    detect-double-spend/SKILL.md
+    enforce-request-binding/SKILL.md
+  discovery/                         Service discovery
     implement-x402-discovery/SKILL.md
 examples/
   go/                 Go examples (client, middleware, discovery)
@@ -80,16 +80,18 @@ This copies skills into:
 
 Other commands:
 ```
-npx @merkleworks/x402-skills uninstall   # Remove installed skills
 npx @merkleworks/x402-skills update      # Reinstall with latest version
+npx @merkleworks/x402-skills uninstall   # Remove installed skills
+npx @merkleworks/x402-skills doctor      # Diagnose and repair environment
+npx @merkleworks/x402-skills init myapp  # Scaffold a new x402 project
 ```
 
 ## Usage
 
 ### Claude Code
-Place this repository in your project or reference skills directly:
+After installing, skills are automatically available. Reference them with:
 ```
-@skills/protocol/explain-x402-protocol.md
+@x402/protocol/explain-x402-protocol
 ```
 
 ### Cursor
