@@ -40,8 +40,14 @@ function err(msg) {
  * target/<category>/<skill-name>/SKILL.md (e.g. ~/.claude/skills/x402/protocol/explain-x402-protocol/SKILL.md).
  */
 function copySkillsTreeSync(sourceSkillsDir, targetSkillsDir) {
-  fs.mkdirSync(path.dirname(targetSkillsDir), { recursive: true });
-  fs.cpSync(sourceSkillsDir, targetSkillsDir, { recursive: true });
+  // Ensure the target directory exists
+  fs.mkdirSync(targetSkillsDir, { recursive: true });
+
+  // Copy the full skills tree preserving directories
+  fs.cpSync(sourceSkillsDir, targetSkillsDir, {
+    recursive: true,
+    dereference: true
+  });
 }
 
 /**
