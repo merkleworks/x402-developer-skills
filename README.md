@@ -1,5 +1,7 @@
 # x402 Developer Skills
 
+x402 is a stateless, settlement-gated HTTP protocol that uses the HTTP 402 status code to gate API access behind verifiable on-chain payment — no accounts, no subscriptions, no API keys, no balance tracking. Unlike traditional payment integrations (Stripe, PayPal) that require user registration, recurring billing infrastructure, and merchant onboarding, or blockchain alternatives that depend on payment channels, token wrapping, or off-chain state, x402 requires only a single UTXO per request: the client receives a payment challenge, constructs and broadcasts a settlement transaction, and proves payment in a subsequent retry — all within standard HTTP semantics. This makes it uniquely suited for machine-to-machine micropayments, pay-per-request AI APIs, and any context where frictionless, permissionless, per-call monetization is needed without the overhead of identity systems or payment intermediaries.
+
 AI developer skills enabling correct implementation of the x402 stateless settlement-gated HTTP protocol.
 
 ## Purpose
