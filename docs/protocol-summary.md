@@ -2,6 +2,30 @@
 
 Condensed reference for the x402 stateless settlement-gated HTTP protocol wire format.
 
+## Protocol Stability
+
+The x402 wire protocol defined in this repository is **frozen for v0.1**.
+
+The following elements are considered stable and must remain backward compatible:
+
+- challenge JSON structure  
+- proof JSON structure  
+- canonical challenge hashing rule  
+- delegator request/response fields  
+- HTTP status semantics  
+
+**Challenge hashing rule:**
+
+```
+challenge_sha256 = SHA256(JCS(challenge))
+```
+
+Implementations must not use language-specific JSON serializers (e.g. `JSON.stringify()`).
+
+Future protocol evolution must occur through versioned extensions rather than modification of existing fields.
+
+---
+
 ## HTTP Headers
 
 | Header | Direction | Encoding | Purpose |
@@ -139,10 +163,10 @@ The gateway MUST accept both the raw base64url format and the compact prefix for
 In addition to `X402-Proof`, the client MAY send the raw transaction via:
 
 ```
-X402-Tx: <hex-encoded raw transaction>
+X402-Tx: <base64-encoded raw transaction bytes>
 ```
 
-This is an optional optimization. If present, the gateway MAY use it to skip base64 decoding of `rawtx_b64` from the proof body.
+Per the protocol spec, the value is **base64** (not hex). If present, the gateway MAY use it to skip base64 decoding of `rawtx_b64` from the proof body.
 
 ## Error Codes
 
@@ -283,9 +307,24 @@ body_hash = SHA256("")
 2. Compute SHA-256 of the canonical JSON bytes
 3. Hex-encode the result
 
+**Rule:** `challenge_sha256 = SHA256(JCS(canonical_json(challenge)))`. Do NOT use `JSON.stringify()`; use a JCS implementation so that hashes are deterministic across languages. See `docs/canonical-hashing-test.md` for examples.
+
 JCS rules:
 - Object keys sorted lexicographically
 - No whitespace
 - Numbers serialized per ECMAScript rules
 - No trailing commas
 - UTF-8 encoding
+
+## Proof Verification Order
+
+Recommended order (cheapest first, matches gateway behavior):
+
+1. **Cheap request validation** — Decode and parse proof; validate version and scheme (400 on failure).
+2. **Challenge existence** — Lookup by `proof.challenge_sha256`; 400 if not found.
+3. **Challenge expiry** — 402 if `expires_at <= now`.
+4. **Canonical request binding** — Recompute and compare binding fields; 403 (invalid_binding) without revealing which field failed.
+5. **Transaction structure** — Decode rawtx, verify txid, nonce spend, payee output.
+6. **Mempool acceptance** — If required, query node; 200 / 202 / 409 as appropriate.
+7. **Nonce consumption** — Replay cache update and nonce spend verification.
+8. **Asset release** — Serve resource, return X402-Receipt and X402-Status.

@@ -7,13 +7,13 @@ skill:
   outputs: A completed transaction (hex and txid) with fee inputs attached, ready for client-side broadcast.
 
   procedure:
-    1. Receive request at POST /delegate/x402.
-       - Request body fields:
-         - partial_tx_hex — hex-encoded partial transaction from the client.
-         - challenge_sha256 — SHA-256 hash of the original challenge JSON. Gateway implementations may accept the legacy alias challenge_hash for compatibility.
+    1. Receive request at POST /delegate/x402 (or POST /api/v1/tx for the alternative JSON tx shape). Use canonical field names; gateways may accept legacy aliases.
+       - Request body fields (canonical):
+         - partial_tx — hex-encoded partial transaction from the client. (Alias: partial_tx_hex.)
+         - challenge_sha256 — SHA-256 hash of the original challenge JSON (JCS). (Alias: challenge_hash.)
          - payee_locking_script_hex — expected locking script for the payee output.
          - amount_sats — minimum required satoshi value for the payee output.
-         - nonce_utxo — object with txid, vout, and satoshis identifying the nonce UTXO.
+         - nonce_utxo — object with txid, vout, satoshis, and optionally locking_script_hex identifying the nonce UTXO.
          - template_mode — boolean indicating Profile B template transaction.
     2. Decode the partial transaction from hex to a transaction object.
     3. Verify exactly one nonce input is present in the transaction.
@@ -26,22 +26,26 @@ skill:
        - If recorded with the same txid, this is an idempotent retry; proceed.
     6. Enforce sighash policy on existing inputs.
        - Profile A: all input signature hash types must be 0xC1 (SIGHASH_ALL|ANYONECANPAY|FORKID) or 0x41 (SIGHASH_ALL|FORKID).
-       - Profile B: input[0] must use 0xC3 (SIGHASH_SINGLE|ANYONECANPAY|FORKID), remaining inputs must use 0xC1 or 0x41.
+       - Profile B: input[0] must use 0xC3 (SIGHASH_SINGLE|ANYONECANPAY|FORKID). Remaining inputs must use 0xC1 or 0x41.
        - Reject any input with a disallowed sighash type.
     7. Calculate the fee deficit.
        - Estimate completed transaction size: current size + (N fee inputs x 148 bytes) + change output (34 bytes).
        - Required fee = estimated size x fee rate (typically 1 sat/byte on BSV).
        - Fee deficit = required fee - (sum of existing input values - sum of existing output values).
-    8. Lease fee UTXOs from the fee pool to cover the deficit.
-       - Each fee UTXO is 1 satoshi.
-       - Lease N UTXOs where N >= fee deficit.
+    8. Atomically reserve fee UTXOs from the fee pool to cover the deficit.
+       - The delegator MUST atomically reserve fee UTXOs before any signing or economic side effects. No fee UTXO may be leased or consumed until reservation succeeds. This prevents TOCTOU races and double-allocation.
+       - Each fee UTXO is 1 satoshi. Lease N UTXOs where N >= fee deficit.
     9. Append fee inputs to the transaction.
        - Sign each fee input with sighash type 0xC1 using FEE_WIF.
     10. Add a change output if the sum of all inputs exceeds the sum of all outputs plus the required fee.
     11. Return the completed transaction.
-        - Response body: {txid, rawtx_hex, accepted: true}.
+        - Response body (canonical): { txid, rawtx, accepted: true }. Gateway implementations may return rawtx_hex or completed_tx instead of rawtx; clients MUST accept any of these for the completed transaction hex.
         - HTTP status 200.
     12. The delegator NEVER broadcasts the transaction. The client is responsible for broadcast.
+
+    Delegator endpoints:
+    - POST /delegate/x402 — primary x402 endpoint; request body uses partial_tx (hex), challenge_sha256, nonce_utxo, etc.
+    - POST /api/v1/tx — alternative endpoint with JSON tx shape (txJson with inputs/outputs); same semantics, different wire format.
 
   validation_rules:
     - The delegator must never broadcast a transaction. This is a protocol invariant. The client broadcasts.

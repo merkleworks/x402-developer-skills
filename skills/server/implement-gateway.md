@@ -31,21 +31,20 @@ skill:
        - On request with proof: verify proof, serve resource or return error
        - See add-x402-to-http-api skill for the full middleware procedure
     5. Implement the delegator endpoint:
-       - Endpoint: POST /delegate/x402
+       - Endpoints: POST /delegate/x402 (primary; partial_tx hex body) or POST /api/v1/tx (alternative; txJson inputs/outputs). Use canonical field names; gateways may accept legacy aliases (partial_tx_hex, challenge_hash, nonce_outpoint) for compatibility.
        - Accept request body: { partial_tx, challenge_sha256, payee_locking_script_hex, amount_sats, nonce_utxo, template_mode }
-        Gateway implementations may accept legacy aliases (partial_tx_hex, challenge_hash, nonce_outpoint) for compatibility.
        - Validation:
          a. Verify challenge_sha256 exists in the challenge cache
          b. Verify nonce_utxo matches the challenge's nonce_utxo
-         c. Parse partial_tx_hex and verify it contains the nonce input and payee output
+         c. Parse partial_tx and verify it contains the nonce input and payee output
          d. Verify payee output pays at least amount_sats to payee_locking_script_hex
-       - Transaction completion:
-         a. Select a fee UTXO from the fee pool
-         b. Append fee input to the transaction
-         c. Sign the fee input with the fee key using sighash 0xC1
+       - Transaction completion: atomically reserve fee UTXOs, then append fee input(s), sign with 0xC1, compute txid.
+         a. Atomically reserve fee UTXO(s) from the fee pool before signing
+         b. Append fee input(s) to the transaction
+         c. Sign the fee input(s) with the fee key using sighash 0xC1
          d. If not template_mode: sign the nonce input with the nonce key using sighash 0xC1
          e. Compute the txid from the completed raw transaction
-       - Return: { txid, rawtx_hex, accepted: true }
+       - Return: { txid, rawtx, accepted: true }. Gateways may return rawtx_hex or completed_tx instead of rawtx; clients should accept any.
        - On any validation failure: return { accepted: false, error: "<reason>" }
     6. Profile B (template mode) support:
        - When the gateway issues a challenge, it may include a pre-signed template:

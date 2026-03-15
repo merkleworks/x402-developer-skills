@@ -5,6 +5,7 @@ skill:
   when_to_use: When a developer needs to implement a client, gatekeeper, or delegator and must understand the exact sequence of operations.
   inputs: None. This is a reference description of the protocol flow.
   outputs: A step-by-step walkthrough of the settlement flow with an ASCII sequence diagram.
+  normative: Wire contract is defined by the protocol spec (01-protocol/Protocol-Spec.md). In case of conflict, the spec prevails.
   procedure:
     1. Step 1 — Client sends initial HTTP request (no proof).
        The client sends a standard HTTP request to the protected endpoint. The request does not contain an X402-Proof header. The client may not yet know the endpoint requires payment.
@@ -70,12 +71,14 @@ skill:
        Content-Type: application/json
 
        {
-         "partial_tx_hex": "0100000001...incomplete",
+         "partial_tx": "0100000001...incomplete",
          "challenge_sha256": "sha256-of-jcs-canonicalized-challenge-json-hex",
          "payee_locking_script_hex": "76a914...88ac",
          "amount_sats": 1000,
          "nonce_utxo": { "txid": "abcdef0123456789...", "vout": 0 }
        }
+
+       Use canonical field names. Gateway implementations may accept legacy aliases (e.g. partial_tx_hex for partial_tx).
 
        The challenge_sha256 is computed by:
          a. Serialize the challenge JSON using RFC 8785 JCS (sort keys lexicographically, no whitespace, deterministic number encoding).
@@ -121,6 +124,8 @@ skill:
        Host: api.example.com
        Accept: application/json
        X402-Proof: <base64url-encoded proof JSON>
+
+       The X402-Proof header MAY use the compact prefix form: v1.bsv-tx.<base64url(proof JSON)>. The gateway MUST accept both plain base64url and the compact form. The client MAY also send X402-Tx: <hex rawtx> as an optional alternative to embedding rawtx_b64 in the proof.
 
        Proof JSON structure (before base64url encoding):
          {
@@ -183,12 +188,12 @@ skill:
           |-- build partial tx   |                    |                  |
           |                      |                    |                  |
           |--- POST /delegate/x402 ----------------->|                  |
-          |    {partial_tx_hex,  |                    |                  |
+          |    {partial_tx,      |                    |                  |
           |     challenge_sha256,  |                    |                  |
           |     payee, amount,   |                    |                  |
           |     nonce_utxo}      |                    |                  |
           |                      |                    |                  |
-          |<-- {txid, rawtx_hex, accepted} ----------|                  |
+          |<-- {txid, rawtx, accepted} -------------|                  |
           |                      |                    |                  |
           |--- broadcast rawtx --------------------------------------------->|
           |                      |                    |                  |

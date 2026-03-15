@@ -51,7 +51,7 @@ skill:
     - The challenge hash MUST be computed using JCS (RFC 8785) canonicalization, not from the raw JSON string. This ensures deterministic hashing regardless of key order or whitespace.
     - Cache-Control: no-store is mandatory on 402 responses to prevent intermediaries from caching challenges.
     - Nonce UTXOs must be leased (reserved) when included in a challenge, and reclaimed if the challenge expires without a valid proof.
-    - The bound headers allowlist (BindHeaders config) determines which request headers are included in req_headers_sha256. Default: Authorization, Content-Type. Headers not in the allowlist are excluded from binding.
+    - The bound headers allowlist (BindHeaders config) determines which request headers are included in req_headers_sha256. Default per spec: accept, content-type, content-length, x402-client, x402-idempotency-key. Headers not in the allowlist are excluded from binding.
     - req_body_sha256 is the SHA-256 hex of the raw request body bytes. For requests with no body, it is the SHA-256 hex of the empty string.
     - Each challenge must be single-use. After successful verification, delete the challenge from the cache.
 

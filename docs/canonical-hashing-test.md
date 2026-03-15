@@ -1,130 +1,90 @@
-# Canonical Hashing Verification
+# Canonical Hashing for x402 Challenge Verification
 
-## Purpose
+This document defines how to compute `challenge_sha256` deterministically so that challenge hashing is identical across Node.js, Go, Python, and any other language. **Do not use `JSON.stringify()`** — it does not produce RFC 8785 JCS output and will cause cross-language verification failures.
 
-Ensure `challenge_sha256` is computed identically across all implementations.
-
-The challenge hash MUST be computed using RFC 8785 JSON Canonicalization Scheme (JCS).
+## Rule
 
 ```
-challenge_sha256 = hex(SHA-256(JCS(challenge_json)))
+challenge_sha256 = SHA256( UTF-8( JCS(challenge) ) ) → lowercase hex
 ```
 
-This is NOT equivalent to:
-```
-SHA-256(JSON.stringify(challenge))
-```
+- **JCS** = RFC 8785 JSON Canonicalization Scheme: sort object keys lexicographically (recursively), no whitespace, deterministic number encoding, UTF-8.
+- **SHA256** = Standard SHA-256 of the canonical JSON bytes.
+- **Output** = 64-character lowercase hexadecimal string.
 
-Standard JSON serializers do not guarantee key order or whitespace handling.
-JCS enforces lexicographic key sorting, no whitespace, and deterministic number encoding.
+## Why Canonicalization Is Required
 
-## Algorithm
+- **Cross-language verification:** A gatekeeper in Go must accept a proof whose `challenge_sha256` was computed by a client in Node.js or Python. Only JCS produces the same byte sequence for the same logical JSON.
+- **Determinism:** Key order and number formatting differ between runtimes and libraries. Plain `JSON.stringify()` is not deterministic across languages or even across library versions.
+- **Spec compliance:** The x402 protocol spec (01-protocol/Protocol-Spec.md) requires JCS for challenge hashing. Implementations that use non-JCS serialization are non-compliant.
 
-1. Construct the challenge JSON object with all fields.
-2. Serialize using JCS (RFC 8785):
-   - Sort object keys lexicographically by Unicode code point (recursive).
-   - No whitespace between tokens.
-   - Integers without decimal points or exponents.
-   - Minimal string escaping.
-3. Compute SHA-256 of the UTF-8 byte representation.
-4. Encode the 32-byte digest as lowercase hexadecimal.
+## Node.js
 
-## Test Vector
-
-Input challenge (pretty-printed):
-
-```json
-{
-  "v": "1",
-  "scheme": "bsv-tx-v1",
-  "amount_sats": 100,
-  "payee_locking_script_hex": "76a91489abcdefab012345678901234567890123456789088ac",
-  "expires_at": 1742040300,
-  "domain": "api.example.com",
-  "method": "GET",
-  "path": "/v1/resource",
-  "query": "",
-  "req_headers_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "req_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "nonce_utxo": {
-    "txid": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-    "vout": 0,
-    "satoshis": 1,
-    "locking_script_hex": "76a91489abcdefab012345678901234567890123456789088ac"
-  },
-  "require_mempool_accept": true,
-  "confirmations_required": 0
-}
-```
-
-JCS canonical output (single line, keys sorted, no whitespace):
-
-```
-{"amount_sats":100,"confirmations_required":0,"domain":"api.example.com","expires_at":1742040300,"method":"GET","nonce_utxo":{"locking_script_hex":"76a91489abcdefab012345678901234567890123456789088ac","satoshis":1,"txid":"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2","vout":0},"path":"/v1/resource","payee_locking_script_hex":"76a91489abcdefab012345678901234567890123456789088ac","query":"","req_body_sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","req_headers_sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","require_mempool_accept":true,"scheme":"bsv-tx-v1","v":"1"}
-```
-
-## Implementation Examples
-
-### Node.js
+Use an RFC 8785–compatible library (e.g. `canonicalize` or a JCS implementation). Do not use `JSON.stringify()` alone.
 
 ```javascript
 const crypto = require("crypto");
-const canonicalize = require("canonicalize"); // npm install canonicalize
 
-const challenge = { /* challenge object */ };
-const canonical = canonicalize(challenge);
-const hash = crypto.createHash("sha256").update(canonical).digest("hex");
-// hash === challenge_sha256
+// Example: using a JCS library (install e.g. canonical-json or similar)
+function challengeSha256(challenge) {
+  const canonical = canonicalize(challenge); // JCS: sorted keys, no whitespace
+  return crypto.createHash("sha256").update(canonical, "utf8").digest("hex").toLowerCase();
+}
 ```
 
-### Go
+If no JCS library is available, implement key sorting and compact serialization:
+
+- Recursively sort object keys lexicographically.
+- Serialize with no whitespace, no trailing commas, numbers as integers (no decimal point).
+- UTF-8 encode the result, then SHA-256 and hex-encode (lowercase).
+
+## Go
+
+Use a JCS library or the same rules: sort keys, compact output, SHA-256.
 
 ```go
 import (
     "crypto/sha256"
     "encoding/hex"
-    jcs "github.com/nicktrav/jcs-go" // or equivalent JCS library
+    "encoding/json"
 )
 
-canonical, _ := jcs.Marshal(challenge)
-sum := sha256.Sum256(canonical)
-hash := hex.EncodeToString(sum[:])
-// hash == challenge_sha256
+// Use a JCS-compliant marshal (e.g. from a JCS package or custom key-sorted marshal).
+func challengeSHA256(challenge interface{}) (string, error) {
+    canonical, err := jcs.Marshal(challenge) // or custom JCS marshal
+    if err != nil {
+        return "", err
+    }
+    sum := sha256.Sum256(canonical)
+    return hex.EncodeToString(sum[:]), nil
+}
 ```
 
-### Python
+Ensure nested objects are also canonicalized (keys sorted recursively).
+
+## Python
+
+Use a JCS library or implement key-sorted, compact JSON and SHA-256.
 
 ```python
 import hashlib
 import json
-# pip install json-canonicalization
-from json_canonicalization import canonicalize
 
-canonical = canonicalize(challenge)
-hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-# hash == challenge_sha256
+def challenge_sha256(challenge):
+    # Use a JCS library (e.g. jcs) or implement: sort keys recursively, no whitespace
+    canonical = jcs.canonicalize(challenge)  # or custom canonicalize
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest().lower()
 ```
 
-### Rust
+Custom canonicalization must: sort dict keys lexicographically, recurse into nested objects, output compact JSON (no spaces), integers without decimal point.
 
-```rust
-use sha2::{Sha256, Digest};
-// Use serde_jcs or equivalent
-let canonical = serde_jcs::to_string(&challenge).unwrap();
-let hash = hex::encode(Sha256::digest(canonical.as_bytes()));
-// hash == challenge_sha256
-```
+## Test Vectors
 
-## Common Errors
+For the same challenge object, all three languages must produce the same `challenge_sha256`. Add a test that:
 
-- Using `JSON.stringify()` without JCS. Standard serializers do not sort keys.
-- Sorting keys at the top level only. JCS requires recursive sorting (nested objects like `nonce_utxo` must also have sorted keys).
-- Including whitespace. JCS output has zero whitespace between tokens.
-- Encoding numbers as floats. `100` must serialize as `100`, not `100.0`.
-- Using uppercase hex. The hash must be lowercase hexadecimal.
+1. Builds a minimal challenge JSON (v, scheme, amount_sats, payee_locking_script_hex, expires_at, domain, method, path, query, req_headers_sha256, req_body_sha256, nonce_utxo object, require_mempool_accept, confirmations_required).
+2. Canonicalizes with JCS in each language.
+3. Computes SHA-256 and hex (lowercase).
+4. Asserts that all three outputs are identical.
 
-## References
-
-- RFC 8785 — JSON Canonicalization Scheme (JCS)
-- FIPS 180-4 — Secure Hash Standard (SHA-256)
-- x402 Protocol Specification
+This guarantees that a client in one language and a gatekeeper in another will agree on challenge identity for proof verification.

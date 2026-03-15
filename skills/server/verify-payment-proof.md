@@ -40,7 +40,7 @@ skill:
         - query: must match the query string of the current request
         - req_headers_sha256: compute SHA-256 hex of the current request's bound headers (using the same canonicalization and allowlist as challenge issuance) and compare
         - req_body_sha256: compute SHA-256 hex of the current request body and compare
-        All comparisons must be exact string matches. Reject with 403 (request_binding_mismatch) if any field differs. Do not reveal which specific field failed validation.
+        All comparisons must be exact string matches. Reject with 403 (invalid_binding). Do not reveal which binding field failed; return a generic error to prevent information leakage.
     14. Verify payee output: the parsed transaction must contain an output that pays at least challenge.amount_sats to challenge.payee_locking_script_hex.
         - Iterate transaction outputs
         - For each output, compare the scriptPubKey (encoded as lowercase hex) to challenge.payee_locking_script_hex using constant-time comparison
@@ -69,17 +69,15 @@ skill:
           - Return 503 Service Unavailable
           - Do NOT serve the protected resource.
 
-    Recommended validation order (cheapest checks first):
-      1. Decode and parse proof (cheap, structural)
-      2. Version and scheme check (string comparison)
-      3. Challenge cache lookup (hash table lookup)
-      4. Challenge expiry check (timestamp comparison)
-      5. Canonical request binding verification (hash computation)
-      6. Transaction structure validation (decode, txid, nonce spend, payee output)
-      7. Sighash type enforcement (byte inspection)
-      8. Replay cache check and record (cache operation)
-      9. Mempool acceptance check (network I/O, most expensive)
-      10. Asset release (serve protected resource)
+    Recommended proof verification order (aligns with spec and gateway behavior):
+      1. Cheap request validation — decode and parse proof; validate version and scheme (400 on failure).
+      2. Challenge existence check — lookup by proof.challenge_sha256; reject with 400 (challenge_not_found) if absent.
+      3. Challenge expiry check — reject with 402 (expired challenge) if expires_at <= now.
+      4. Canonical request binding verification — recompute and compare domain, method, path, query, req_headers_sha256, req_body_sha256; reject with 403 (invalid_binding) without revealing which field failed.
+      5. Transaction structure validation — decode rawtx_b64, verify txid, nonce spend, payee output; reject with 400 as appropriate.
+      6. Mempool acceptance verification — if require_mempool_accept, query node; 200 if accepted, 202 if pending, 409 if rejected.
+      7. Nonce consumption verification — confirm nonce UTXO is spent and replay cache updated before serving.
+      8. Asset release — serve protected resource, return X402-Receipt and X402-Status.
 
   validation_rules:
     - All string comparisons for txid, script hex, and challenge hash MUST use constant-time comparison functions to prevent timing side-channel attacks. Do not use standard string equality (==).

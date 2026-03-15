@@ -36,7 +36,7 @@ skill:
        d. The sponsor appends one or more funding inputs, each signed with sighash 0xC1.
        e. The sponsor may append additional outputs (e.g., change output) after output[0]. The gateway's 0xC3 signature does not cover these.
     4. Serialize the completed partial transaction to hex.
-    5. Submit partial_tx_hex to the delegator along with the challenge metadata.
+    5. Submit partial_tx (hex) to the delegator along with the challenge metadata (canonical fields: partial_tx, challenge_sha256, nonce_utxo; gateways may accept partial_tx_hex, challenge_hash as aliases).
 
   validation_rules:
     - The prevTxID in the raw transaction must be in reversed byte order (internal format), not the display format. If nonce_utxo.txid is "abcd...1234", reverse it byte-by-byte to "3412...cdab" for the raw transaction.

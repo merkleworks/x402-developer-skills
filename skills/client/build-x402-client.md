@@ -26,10 +26,10 @@ skill:
          - The gateway has already pre-signed input[0] with sighash 0xC3
          - Sponsor appends funding inputs and optional change outputs
     10. Submit the partial transaction to the delegator:
-        - Endpoint: POST /delegate/x402
-        - Request body (JSON):
+        - Endpoint: POST /delegate/x402 (or POST /api/v1/tx for alternative JSON shape)
+        - Request body (canonical field names; gateways may accept partial_tx_hex, challenge_hash as aliases):
           {
-            "partial_tx_hex": "<hex-encoded partial transaction>",
+            "partial_tx": "<hex-encoded partial transaction>",
             "challenge_sha256": "<hex from step 7>",
             "payee_locking_script_hex": "<from challenge>",
             "amount_sats": <from challenge>,
@@ -41,8 +41,8 @@ skill:
             "template_mode": <true if Profile B, false if Profile A>
           }
     11. Receive the delegation result:
-        - Fields: txid, rawtx_hex, accepted (boolean)
-        - Verify accepted is true before proceeding
+        - Fields: txid, rawtx (or rawtx_hex / completed_tx as gateway aliases), accepted (boolean)
+        - Verify accepted is true before proceeding. Use rawtx, rawtx_hex, or completed_tx for the completed transaction hex.
     12. Broadcast the completed transaction to the BSV network. This is the client's responsibility, not the delegator's. Use the broadcast URL (default: WhatsOnChain mainnet broadcast endpoint).
     13. Build the proof JSON object:
         {

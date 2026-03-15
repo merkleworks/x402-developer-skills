@@ -12,6 +12,10 @@ Structured protocol skills for AI coding systems (Claude Code, Cursor, agent env
 - Operate infrastructure components (gateway, delegator, nonce mint)
 - Enforce protocol security invariants
 
+## Protocol Stability
+
+The x402 wire protocol is **frozen for v0.1**. Challenge and proof structures, canonical hashing, delegator fields, and HTTP status semantics are stable. See [Protocol Stability](docs/PROTOCOL-STABILITY-LOCK.md) and [Wire Format Quick Reference](docs/protocol-summary.md#protocol-stability) for details.
+
 ## Authority Hierarchy
 
 These skills are derived from:
@@ -67,7 +71,7 @@ docs/
 Install the x402 developer skills into your AI coding tools with one command:
 
 ```
-npx x402-skills install
+npx @merkleworks/x402-skills install
 ```
 
 This copies skills into:
@@ -76,8 +80,8 @@ This copies skills into:
 
 Other commands:
 ```
-npx x402-skills uninstall   # Remove installed skills
-npx x402-skills update      # Reinstall with latest version
+npx @merkleworks/x402-skills uninstall   # Remove installed skills
+npx @merkleworks/x402-skills update      # Reinstall with latest version
 ```
 
 ## Usage

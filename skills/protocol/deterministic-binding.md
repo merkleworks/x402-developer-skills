@@ -156,4 +156,4 @@ skill:
     - RFC 9110 — HTTP Semantics (header field syntax)
     - FIPS 180-4 — Secure Hash Standard (SHA-256)
     - RFC 4648 Section 5 — base64url encoding
-    - x402 Protocol Specification (internal)
+    - x402 Protocol Specification (01-protocol/Protocol-Spec.md). Normative wire contract; spec prevails in case of conflict.
