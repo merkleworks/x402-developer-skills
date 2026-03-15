@@ -16,9 +16,10 @@ const TARGETS = [
   { name: "Cursor",      dir: path.join(os.homedir(), ".cursor", "skills", SKILL_DIR_NAME) },
 ];
 
-// Source skills directory — relative to this script (../skills)
+// Source paths — relative to this script (package root)
 const REPO_ROOT = path.resolve(__dirname, "..");
 const SKILLS_SRC = path.join(REPO_ROOT, "skills");
+const SKILLS_MD_SRC = path.join(REPO_ROOT, "SKILLS.md");
 const SKILLS_JSON_SRC = path.join(REPO_ROOT, "skills.json");
 
 // ---------------------------------------------------------------------------
@@ -110,10 +111,12 @@ function install() {
     try {
       copyDirSync(SKILLS_SRC, target.dir);
 
-      // Also copy skills.json into the target root
+      // Copy SKILLS.md and skills.json from package root into target
+      if (fs.existsSync(SKILLS_MD_SRC)) {
+        fs.copyFileSync(SKILLS_MD_SRC, path.join(target.dir, "SKILLS.md"));
+      }
       if (fs.existsSync(SKILLS_JSON_SRC)) {
-        const parentDir = path.dirname(target.dir);
-        fs.copyFileSync(SKILLS_JSON_SRC, path.join(parentDir, "x402-skills.json"));
+        fs.copyFileSync(SKILLS_JSON_SRC, path.join(target.dir, "skills.json"));
       }
 
       const fileCount = countFiles(target.dir);
@@ -148,12 +151,6 @@ function uninstall() {
     if (fs.existsSync(target.dir)) {
       try {
         rmDirSync(target.dir);
-
-        // Remove skills.json index if present
-        const indexPath = path.join(path.dirname(target.dir), "x402-skills.json");
-        if (fs.existsSync(indexPath)) {
-          fs.unlinkSync(indexPath);
-        }
 
         log("  ✓ Removed " + target.dir);
         removed++;
