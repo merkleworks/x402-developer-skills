@@ -1,0 +1,2 @@
+# Go compiled binary - exclude from published package
+client

@@ -18,3 +18,7 @@ __pycache__/
 # Environment
 .env
 .DS_Store
+*.tgz
+docs/PROTOCOL-ALIGNMENT-CORRECTIONS-APPLIED.md
+docs/PROTOCOL-CONFORMANCE-CHECK.md
+docs/PROTOCOL-STABILITY-LOCK.md
