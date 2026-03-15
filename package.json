@@ -28,7 +28,5 @@
     "type": "git",
     "url": "git+https://github.com/merkleworks/x402-developer-skills.git"
   },
-  "dependencies": {
-    "@merkleworks/x402-skills": "^0.1.0"
-  }
+  "dependencies": {}
 }
