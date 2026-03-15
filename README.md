@@ -1,7 +1,33 @@
 # x402 Developer Skills
 
-x402 lets any HTTP API accept instant, per-request payments with zero setup — no accounts, no API keys, no subscriptions. A client hits a protected endpoint, gets an HTTP 402 challenge, pays on-chain, and retries with proof. Done. Stripe and PayPal need merchant onboarding, billing systems, and user registration. Payment channels and token protocols need off-chain state and complex infrastructure. x402 needs none of that — just standard HTTP and a single Bitcoin transaction per call. Built for machine-to-machine micropayments, pay-per-request AI APIs, and anywhere you want to monetize an endpoint without intermediaries.
+x402 allows any HTTP API to accept instant per-request payments without accounts or billing systems.
 
+Traditional payment APIs require merchant onboarding, user registration, API keys, and billing ledgers. Payment channels and token systems require off-chain state and additional infrastructure.
+
+x402 removes all of that.
+
+The payment happens directly in the HTTP request cycle.
+
+Flow
+	•	Client requests a protected endpoint
+	•	Server responds 402 Payment Required with a challenge
+	•	Client pays on-chain
+	•	Client retries the request with payment proof
+	•	Server executes the request
+
+No:
+	•	accounts
+	•	API keys
+	•	subscriptions
+	•	balance tracking
+	•	intermediaries
+
+Just HTTP + a Bitcoin transaction per request.
+
+Designed for:
+	•	machine-to-machine micropayments
+	•	pay-per-request AI APIs
+	•	monetized public endpoints
 AI developer skills enabling correct implementation of the x402 stateless settlement-gated HTTP protocol.
 
 ## Purpose
