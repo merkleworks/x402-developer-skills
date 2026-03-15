@@ -1,0 +1,27 @@
+{
+  "name": "x402-skills",
+  "version": "0.1.0",
+  "description": "AI developer skills for implementing the x402 stateless settlement-gated HTTP protocol",
+  "bin": {
+    "x402-skills": "./cli/index.js"
+  },
+  "files": [
+    "cli/",
+    "skills/",
+    "skills.json"
+  ],
+  "keywords": [
+    "x402",
+    "bsv",
+    "payment",
+    "protocol",
+    "ai-skills",
+    "claude",
+    "cursor"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/merkleworks/x402-developer-skills"
+  }
+}

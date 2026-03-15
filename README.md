@@ -62,6 +62,24 @@ docs/
   integration-guide.md  Step-by-step integration guide
 ```
 
+## Install
+
+Install the x402 developer skills into your AI coding tools with one command:
+
+```
+npx x402-skills install
+```
+
+This copies skills into:
+- `~/.claude/skills/x402` (Claude Code)
+- `~/.cursor/skills/x402` (Cursor)
+
+Other commands:
+```
+npx x402-skills uninstall   # Remove installed skills
+npx x402-skills update      # Reinstall with latest version
+```
+
 ## Usage
 
 ### Claude Code
