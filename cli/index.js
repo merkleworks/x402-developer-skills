@@ -35,21 +35,13 @@ function err(msg) {
 }
 
 /**
- * Recursively copy a directory tree.
- * Creates destination directories as needed.
+ * Recursively copy the entire skills directory tree, preserving structure.
+ * Uses fs.cpSync so that skills/<category>/<skill-name>/SKILL.md becomes
+ * target/<category>/<skill-name>/SKILL.md (e.g. ~/.claude/skills/x402/protocol/explain-x402-protocol/SKILL.md).
  */
-function copyDirSync(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      copyDirSync(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
+function copySkillsTreeSync(sourceSkillsDir, targetSkillsDir) {
+  fs.mkdirSync(path.dirname(targetSkillsDir), { recursive: true });
+  fs.cpSync(sourceSkillsDir, targetSkillsDir, { recursive: true });
 }
 
 /**
@@ -109,7 +101,7 @@ function install() {
 
   for (const target of TARGETS) {
     try {
-      copyDirSync(SKILLS_SRC, target.dir);
+      copySkillsTreeSync(SKILLS_SRC, target.dir);
 
       // Copy SKILLS.md and skills.json from package root into target
       if (fs.existsSync(SKILLS_MD_SRC)) {
@@ -132,7 +124,7 @@ function install() {
     log("Done. " + installed + " target(s) installed.");
     log("");
     log("Usage in Claude Code:");
-    log('  @x402/protocol/explain-x402-protocol.md');
+    log('  @x402/protocol/explain-x402-protocol  (skill module: category/skill-name/SKILL.md)');
     log("");
     log("Usage in Cursor:");
     log("  Reference skills from ~/.cursor/skills/x402/");
