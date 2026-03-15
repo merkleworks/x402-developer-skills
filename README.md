@@ -47,10 +47,12 @@ skills/
     validate-proof.md
     detect-double-spend.md
     enforce-request-binding.md
+  discovery/          Service discovery
+    implement-x402-discovery/SKILL.md
 examples/
-  go/                 Go examples (client, middleware)
-  node/               TypeScript examples (client, middleware)
-  python/             Python examples (client, gateway)
+  go/                 Go examples (client, middleware, discovery)
+  node/               TypeScript examples (client, middleware, discovery)
+  python/             Python examples (client, gateway, discovery)
   rust/               Rust examples (client, middleware) — requires Rust 1.75+
 templates/
   gateway-template/   Go gateway project scaffold
@@ -81,6 +83,20 @@ x402 is a stateless settlement-gated HTTP protocol. Core properties:
 - No accounts, no balance tracking, no subscription ledgers
 - Deterministic request binding (method, path, query, headers, body)
 - Payment -> proof -> execution flow
+
+## Service Discovery
+
+Services supporting x402 should expose a discovery endpoint at:
+
+```
+GET /.well-known/x402
+```
+
+This returns a JSON document listing all payable endpoints, their prices, and
+acceptance policies. AI agents can fetch this endpoint to automatically discover
+and pay for x402-gated APIs without prior configuration.
+
+See `skills/discovery/implement-x402-discovery/SKILL.md` for the full specification.
 
 ## Scheme Identifier
 
