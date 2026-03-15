@@ -1,0 +1,36 @@
+# Rust build artifacts
+examples/rust/**/target
+**/target
+
+# Node dependencies
+node_modules
+
+# Git files
+.git
+.gitignore
+.github
+
+# Logs
+*.log
+
+# OS artifacts
+.DS_Store
+
+# Local environment files
+.env
+.env.*
+
+# Development caches
+.cache
+tmp
+temp
+
+# Go compiled binaries
+examples/go/client/client
+examples/go/middleware/middleware
+
+# Gateway template binary
+templates/gateway-template/x402-gateway
+
+# Binary artifacts
+*.bin
