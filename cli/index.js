@@ -35,19 +35,23 @@ function err(msg) {
 }
 
 /**
- * Recursively copy the entire skills directory tree, preserving structure.
- * Uses fs.cpSync so that skills/<category>/<skill-name>/SKILL.md becomes
+ * Copy the contents of the skills directory into the target, preserving structure.
+ * skills/<category>/<skill-name>/SKILL.md becomes
  * target/<category>/<skill-name>/SKILL.md (e.g. ~/.claude/skills/x402/protocol/explain-x402-protocol/SKILL.md).
+ * Copies each top-level entry (e.g. protocol) so the directory tree is not flattened.
  */
 function copySkillsTreeSync(sourceSkillsDir, targetSkillsDir) {
-  // Ensure the target directory exists
   fs.mkdirSync(targetSkillsDir, { recursive: true });
 
-  // Copy the full skills tree preserving directories
-  fs.cpSync(sourceSkillsDir, targetSkillsDir, {
-    recursive: true,
-    dereference: true
-  });
+  for (const entry of fs.readdirSync(sourceSkillsDir)) {
+    const src = path.join(sourceSkillsDir, entry);
+    const dest = path.join(targetSkillsDir, entry);
+
+    fs.cpSync(src, dest, {
+      recursive: true,
+      dereference: true
+    });
+  }
 }
 
 /**
