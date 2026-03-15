@@ -71,13 +71,13 @@ skill:
 
        {
          "partial_tx_hex": "0100000001...incomplete",
-         "challenge_hash": "sha256-of-jcs-canonicalized-challenge-json-hex",
+         "challenge_sha256": "sha256-of-jcs-canonicalized-challenge-json-hex",
          "payee_locking_script_hex": "76a914...88ac",
          "amount_sats": 1000,
          "nonce_utxo": { "txid": "abcdef0123456789...", "vout": 0 }
        }
 
-       The challenge_hash is computed by:
+       The challenge_sha256 is computed by:
          a. Serialize the challenge JSON using RFC 8785 JCS (sort keys lexicographically, no whitespace, deterministic number encoding).
          b. SHA-256 the UTF-8 bytes of the canonical JSON.
          c. Encode as lowercase hex.
@@ -89,7 +89,7 @@ skill:
          a. Deserializes the partial transaction.
          b. Validates input[0] references the declared nonce_utxo.
          c. Validates output[0] pays the declared payee_locking_script_hex with value >= amount_sats.
-         d. Validates the challenge_hash against the declared parameters.
+         d. Validates the challenge_sha256 against the declared parameters.
          e. Checks policy constraints (max fee, allowed script types, tx size limits).
          f. Atomically reserves fee UTXOs from its pool.
          g. Appends fee input(s) to the transaction.
@@ -148,8 +148,8 @@ skill:
          e. Verify input[0] references the nonce_utxo from the original challenge.
          f. Verify output[0] pays the payee_locking_script_hex with value >= amount_sats.
          g. Re-derive the challenge from the current request's binding fields (domain, method, path, query, headers hash, body hash).
-         h. Compute the challenge_hash from the re-derived challenge using JCS + SHA-256.
-         i. Verify the challenge_hash matches the one embedded or expected.
+         h. Compute the challenge_sha256 from the re-derived challenge using JCS + SHA-256.
+         i. Verify the challenge_sha256 matches the one embedded or expected.
          j. Verify the nonce_utxo has not been previously accepted (optional LRU cache check).
          k. Verify the transaction is visible in the mempool or a block (broadcast confirmation).
          l. Verify the nonce UTXO is spent (confirms the transaction was actually mined or mempool-accepted).
@@ -184,7 +184,7 @@ skill:
           |                      |                    |                  |
           |--- POST /delegate/x402 ----------------->|                  |
           |    {partial_tx_hex,  |                    |                  |
-          |     challenge_hash,  |                    |                  |
+          |     challenge_sha256,  |                    |                  |
           |     payee, amount,   |                    |                  |
           |     nonce_utxo}      |                    |                  |
           |                      |                    |                  |

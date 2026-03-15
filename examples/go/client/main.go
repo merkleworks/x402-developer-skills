@@ -56,14 +56,14 @@ type TemplateRef struct {
 // DelegationRequest is sent to POST /delegate/x402.
 type DelegationRequest struct {
 	PartialTx    string       `json:"partial_tx"`
-	ChallengeHash string      `json:"challenge_hash"`
+	ChallengeHash string      `json:"challenge_sha256"`
 	PayeeScript  string       `json:"payee_locking_script_hex,omitempty"`
 	AmountSats   int64        `json:"amount_sats,omitempty"`
-	NonceOutpoint *NonceOutpoint `json:"nonce_outpoint,omitempty"`
+	NonceUTXO *NonceUTXO `json:"nonce_utxo,omitempty"`
 	TemplateMode bool         `json:"template_mode,omitempty"`
 }
 
-type NonceOutpoint struct {
+type NonceUTXO struct {
 	TxID     string `json:"txid"`
 	Vout     uint32 `json:"vout"`
 	Satoshis uint64 `json:"satoshis,omitempty"`
@@ -154,7 +154,7 @@ func main() {
 		ChallengeHash: challengeHash,
 		PayeeScript:   challenge.PayeeLockingScriptHex,
 		AmountSats:    challenge.AmountSats,
-		NonceOutpoint: &NonceOutpoint{
+		NonceUTXO: &NonceUTXO{
 			TxID:     challenge.NonceUTXO.TxID,
 			Vout:     challenge.NonceUTXO.Vout,
 			Satoshis: challenge.NonceUTXO.Satoshis,

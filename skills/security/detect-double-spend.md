@@ -33,7 +33,7 @@ skill:
          - If either reports doubleSpend=true, reject.
          - This reduces the window for accepting a transaction that only one node has seen while the other has seen a conflicting spend.
     4. First-seen cache (optional, supplementary).
-       - A lightweight cache mapping nonce_outpoint to txid with TTL = challenge.expires_at - current time.
+       - A lightweight cache mapping nonce_utxo to txid with TTL = challenge.expires_at - current time.
        - Provides instant rejection of double-spends even before the mempool has propagated the first transaction.
        - If the first-seen cache entry exists and the txid differs, reject immediately without querying the mempool.
 

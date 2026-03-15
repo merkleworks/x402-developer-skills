@@ -125,10 +125,10 @@ async function main(): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       partial_tx: partialTxHex,
-      challenge_hash: challengeHash,
+      challenge_sha256: challengeHash,
       payee_locking_script_hex: challenge.payee_locking_script_hex,
       amount_sats: challenge.amount_sats,
-      nonce_outpoint: {
+      nonce_utxo: {
         txid: challenge.nonce_utxo.txid,
         vout: challenge.nonce_utxo.vout,
         satoshis: challenge.nonce_utxo.satoshis,

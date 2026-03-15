@@ -196,7 +196,7 @@ def verify_proof(proof_header: str) -> tuple[str, str] | Response:
     # In production: verify nonce spend, payee output, mempool acceptance
     # (see verify-payment-proof.md skill for complete 16-step verification)
 
-    # Compute receipt: SHA256(txid + ":" + challenge_hash)
+    # Compute receipt: SHA256(txid + ":" + challenge_sha256)
     txid = proof.get("txid", "")
     receipt_hash = sha256hex(f"{txid}:{challenge_sha256}")
 

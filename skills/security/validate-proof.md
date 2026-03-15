@@ -19,8 +19,8 @@ skill:
        - Hex-encode to produce the txid string.
        - Compare to proof.txid using constant-time comparison. Reject with 400 txid_mismatch if they differ.
     7. Verify the transaction has at least one input. Reject with 400 no_inputs if the input count is zero.
-    8. Look up the challenge in the challenge cache using proof.challenge_sha256 as the key. Reject with 404 challenge_not_found if absent.
-    9. Check challenge expiry. If challenge.expires_at is less than or equal to the current unix timestamp, reject with 410 challenge_expired.
+    8. Look up the challenge in the challenge cache using proof.challenge_sha256 as the key. Reject with 400 challenge_not_found if absent.
+    9. Check challenge expiry. If challenge.expires_at is less than or equal to the current unix timestamp, reject with 402 challenge_expired.
     10. Verify nonce spend.
         - The transaction must contain an input whose previous outpoint matches challenge.nonce_utxo (txid and vout).
         - For Profile B (template_mode): the nonce input must be at index 0.
@@ -41,7 +41,7 @@ skill:
     14. Check the replay cache for the nonce outpoint.
         - If the outpoint is already recorded with a different txid, reject with 409 double_spend.
         - If recorded with the same txid, this is an idempotent re-verification; proceed.
-        - If not recorded, add it: nonce_outpoint -> {txid, challenge_hash, created_at}.
+        - If not recorded, add it: nonce_utxo -> {txid, challenge_sha256, created_at}.
     15. Optional: if require_mempool_accept is enabled, query the BSV node mempool for proof.txid.
         - Visible and not double-spent: accept.
         - Not visible: respond 202 (pending, retry later).

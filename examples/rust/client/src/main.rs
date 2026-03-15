@@ -58,19 +58,19 @@ struct TemplateRef {
 #[derive(Debug, Serialize)]
 struct DelegationRequest {
     partial_tx: String,
-    challenge_hash: String,
+    challenge_sha256: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     payee_locking_script_hex: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     amount_sats: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    nonce_outpoint: Option<NonceOutpoint>,
+    nonce_utxo: Option<NonceUTXO>,
     #[serde(skip_serializing_if = "Option::is_none")]
     template_mode: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
-struct NonceOutpoint {
+struct NonceUTXO {
     txid: String,
     vout: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -297,10 +297,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Step 4: Submitting to delegator...");
     let deleg_req = DelegationRequest {
         partial_tx: partial_tx_hex,
-        challenge_hash: challenge_hash.clone(),
+        challenge_sha256: challenge_hash.clone(),
         payee_locking_script_hex: Some(challenge.payee_locking_script_hex.clone()),
         amount_sats: Some(challenge.amount_sats),
-        nonce_outpoint: Some(NonceOutpoint {
+        nonce_utxo: Some(NonceUTXO {
             txid: nonce.txid.clone(),
             vout: nonce.vout,
             satoshis: Some(nonce.satoshis),

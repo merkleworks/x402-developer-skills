@@ -30,10 +30,10 @@ skill:
         - Request body (JSON):
           {
             "partial_tx_hex": "<hex-encoded partial transaction>",
-            "challenge_hash": "<hex from step 7>",
+            "challenge_sha256": "<hex from step 7>",
             "payee_locking_script_hex": "<from challenge>",
             "amount_sats": <from challenge>,
-            "nonce_outpoint": {
+            "nonce_utxo": {
               "txid": "<nonce_utxo.txid>",
               "vout": <nonce_utxo.vout>,
               "satoshis": <nonce_utxo.satoshis>

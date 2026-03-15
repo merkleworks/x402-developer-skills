@@ -9,7 +9,7 @@ Condensed reference for the x402 stateless settlement-gated HTTP protocol wire f
 | `X402-Challenge` | Server -> Client | Base64url JSON | Challenge payload on 402 response |
 | `X402-Proof` | Client -> Server | Base64url JSON | Payment proof on retry request |
 | `X402-Accept` | Server -> Client | Comma-separated | Supported payment schemes |
-| `X402-Receipt` | Server -> Client | Hex | SHA256(txid + ":" + challenge_hash) |
+| `X402-Receipt` | Server -> Client | Hex | SHA256(txid + ":" + challenge_sha256) |
 | `X402-Status` | Server -> Client | Plain text | Mempool status: `accepted`, `pending`, `rejected`, `error` |
 
 ## Challenge JSON Schema
@@ -124,6 +124,26 @@ Sent in the `X402-Proof` header (base64url-encoded).
 | req_headers_sha256 | `req_headers_sha256` | Must match challenge req_headers_sha256 |
 | req_body_sha256 | `req_body_sha256` | Must match challenge req_body_sha256 |
 
+## Compact Proof Header
+
+The proof may be sent using a compact prefix format:
+
+```
+v1.bsv-tx.<base64url-encoded-proof-json>
+```
+
+The gateway MUST accept both the raw base64url format and the compact prefix format.
+
+## Optional Header: X402-Tx
+
+In addition to `X402-Proof`, the client MAY send the raw transaction via:
+
+```
+X402-Tx: <hex-encoded raw transaction>
+```
+
+This is an optional optimization. If present, the gateway MAY use it to skip base64 decoding of `rawtx_b64` from the proof body.
+
 ## Error Codes
 
 ### 400 Bad Request
@@ -171,6 +191,37 @@ Sent in the `X402-Proof` header (base64url-encoded).
 | `no_utxos_available` | Nonce pool is exhausted; server cannot issue challenges |
 | `mempool_check_error` | Mempool verification service is unreachable |
 
+## Delegator Endpoints
+
+The delegator accepts partial transactions at:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /delegate/x402` | Primary delegation endpoint |
+| `POST /api/v1/tx` | Alternative endpoint (gateway compatibility) |
+
+### Request Body (spec field names)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `partial_tx` | string | Hex-encoded partial transaction |
+| `challenge_sha256` | string | SHA-256 hex of the JCS-canonical challenge |
+| `nonce_utxo` | object | Nonce UTXO reference (txid, vout, satoshis) |
+| `payee_locking_script_hex` | string | Expected payee script |
+| `amount_sats` | integer | Minimum required payment |
+| `template_mode` | boolean | True for Profile B |
+
+### Gateway Compatibility Aliases
+
+Gateway implementations may accept these legacy field names:
+
+| Spec Name | Alias |
+|-----------|-------|
+| `partial_tx` | `partial_tx_hex` |
+| `challenge_sha256` | `challenge_hash` |
+| `nonce_utxo` | `nonce_outpoint` |
+| `rawtx` | `rawtx_hex`, `completed_tx` |
+
 ## Sighash Types
 
 | Value | Name | Usage |
@@ -186,12 +237,12 @@ Gateway MUST reject any sighash type not in this set.
 ### Receipt Computation
 
 ```
-receipt = SHA256(txid + ":" + challenge_hash)
+receipt = SHA256(txid + ":" + challenge_sha256)
 ```
 
 Where:
 - `txid` is the hex-encoded transaction ID
-- `challenge_hash` is the SHA-256 hex of the JCS-canonical challenge JSON
+- `challenge_sha256` is the SHA-256 hex of the JCS-canonical challenge JSON
 - Concatenation is literal string concatenation with colon separator
 - Result is hex-encoded
 

@@ -40,14 +40,14 @@ skill:
         - query: must match the query string of the current request
         - req_headers_sha256: compute SHA-256 hex of the current request's bound headers (using the same canonicalization and allowlist as challenge issuance) and compare
         - req_body_sha256: compute SHA-256 hex of the current request body and compare
-        All comparisons must be exact string matches. Reject with 403 (request_binding_mismatch) if any field differs. Include which field failed in the error response for debugging.
+        All comparisons must be exact string matches. Reject with 403 (request_binding_mismatch) if any field differs. Do not reveal which specific field failed validation.
     14. Verify payee output: the parsed transaction must contain an output that pays at least challenge.amount_sats to challenge.payee_locking_script_hex.
         - Iterate transaction outputs
         - For each output, compare the scriptPubKey (encoded as lowercase hex) to challenge.payee_locking_script_hex using constant-time comparison
         - If the script matches, verify the output value (satoshis) is greater than or equal to challenge.amount_sats
         - Reject with 400 (insufficient_payment) if no qualifying output is found
     15. Record in replay cache and update nonce pool:
-        - Insert into replay cache: key = nonce outpoint string, value = { txid: proof.txid, challenge_hash: proof.challenge_sha256 }
+        - Insert into replay cache: key = nonce outpoint string, value = { txid: proof.txid, challenge_sha256: proof.challenge_sha256 }
         - Mark the nonce as spent in the nonce pool (transition from leased to spent)
     16. Mempool acceptance check: submit the raw transaction to the mempool checker (e.g., WhatsOnChain or local node) and interpret the result:
         - Transaction accepted to mempool (or already in mempool):
@@ -69,9 +69,21 @@ skill:
           - Return 503 Service Unavailable
           - Do NOT serve the protected resource.
 
+    Recommended validation order (cheapest checks first):
+      1. Decode and parse proof (cheap, structural)
+      2. Version and scheme check (string comparison)
+      3. Challenge cache lookup (hash table lookup)
+      4. Challenge expiry check (timestamp comparison)
+      5. Canonical request binding verification (hash computation)
+      6. Transaction structure validation (decode, txid, nonce spend, payee output)
+      7. Sighash type enforcement (byte inspection)
+      8. Replay cache check and record (cache operation)
+      9. Mempool acceptance check (network I/O, most expensive)
+      10. Asset release (serve protected resource)
+
   validation_rules:
     - All string comparisons for txid, script hex, and challenge hash MUST use constant-time comparison functions to prevent timing side-channel attacks. Do not use standard string equality (==).
-    - The receipt is computed as SHA-256(txid + ":" + challenge_hash) where + is string concatenation. The input is the UTF-8 encoded string, not raw bytes of the txid.
+    - The receipt is computed as SHA-256(txid + ":" + challenge_sha256) where + is string concatenation. The input is the UTF-8 encoded string, not raw bytes of the txid.
     - rawtx_b64 uses standard base64 (with padding). The outer proof encoding uses base64url (without padding). Do not confuse these.
     - The challenge cache lookup (step 7) and replay check (step 8) must both be performed. The replay check handles the case where the challenge has been evicted but the nonce was already spent.
     - Step 15 (record in replay cache) must happen BEFORE step 16 (mempool check). This prevents a race condition where a second request with the same proof bypasses the replay check while the first is still checking mempool.
@@ -83,7 +95,7 @@ skill:
     - Rejecting idempotent re-serves (same nonce, same txid) as double-spends. These should be allowed through to the mempool check.
     - Not checking challenge expiry (step 11) before verifying the transaction. Expired challenges should short-circuit to 402 without further processing.
     - Comparing scriptPubKey bytes directly instead of hex-encoded strings, or using different case (uppercase vs lowercase hex).
-    - Computing the receipt incorrectly: the input to SHA-256 is the string "txid:challenge_hash", not binary concatenation of the two hashes.
+    - Computing the receipt incorrectly: the input to SHA-256 is the string "txid:challenge_sha256", not binary concatenation of the two hashes.
     - Serving the protected resource on 202 (pending) responses. Only 200 (accepted) should serve the resource.
     - Not deleting the challenge from the cache after successful verification (step 16, accepted case). Stale challenges waste cache memory and could theoretically be reused if the replay cache is lost.
 

@@ -323,7 +323,7 @@ async fn verify_and_serve(
     // In production: verify nonce spend, payee output, mempool acceptance
     // (see verify-payment-proof.md skill for complete 16-step verification)
 
-    // Step 6: Compute receipt: SHA256(txid + ":" + challenge_hash)
+    // Step 6: Compute receipt: SHA256(txid + ":" + challenge_sha256)
     let receipt_hash = sha256hex(format!("{}:{}", proof.txid, proof.challenge_sha256).as_bytes());
 
     // Delete challenge (single-use)

@@ -49,7 +49,7 @@ skill:
          Mitigation at consensus layer: The transaction was already accepted. Re-broadcasting the same transaction is a no-op (the network already has it).
          Mitigation at gatekeeper layer: The gatekeeper may either:
            a. Idempotent re-serve: recognize the txid and serve the response again (useful for retries after network failures).
-           b. Accept-once: reject the proof because the nonce_outpoint is already in the spent set.
+           b. Accept-once: reject the proof because the nonce_utxo is already in the spent set.
          The choice between (a) and (b) is an implementation decision. Both are safe because the payment was already settled.
 
        Case 2 — Same txid, different endpoint.
@@ -58,11 +58,11 @@ skill:
 
        Case 3 — New transaction without the challenge nonce.
          Attack: The attacker constructs a new transaction that pays the correct amount but uses a different UTXO as input[0] instead of the challenge nonce.
-         Mitigation: The gatekeeper verifies that input[0] of the transaction references the nonce_outpoint from the challenge. If it does not match, the proof is rejected.
+         Mitigation: The gatekeeper verifies that input[0] of the transaction references the nonce_utxo from the challenge. If it does not match, the proof is rejected.
 
        Case 4 — New transaction with a different nonce.
          Attack: The attacker obtains a nonce from a different challenge and constructs a transaction using that nonce.
-         Mitigation: The gatekeeper re-derives the challenge from the current request. The nonce_outpoint in the re-derived challenge is specific to the original 402 response. The attacker's transaction uses a different nonce, so the challenge hash does not match. Proof verification fails.
+         Mitigation: The gatekeeper re-derives the challenge from the current request. The nonce_utxo in the re-derived challenge is specific to the original 402 response. The attacker's transaction uses a different nonce, so the challenge hash does not match. Proof verification fails.
 
        Case 5 — Modified request body, same proof.
          Attack: The attacker changes the request body but presents the original proof.
@@ -78,16 +78,16 @@ skill:
        Without request binding, an attacker could pay for a cheap endpoint and reuse the proof on an expensive endpoint. Request binding prevents this by making the challenge hash endpoint-specific and request-specific.
 
     6. Describe the operational replay cache.
-       The gatekeeper maintains an LRU (Least Recently Used) map of nonce_outpoint to txid. This cache serves as defence-in-depth:
+       The gatekeeper maintains an LRU (Least Recently Used) map of nonce_utxo to txid. This cache serves as defence-in-depth:
 
        Purpose:
          - Fast rejection of re-presented proofs without querying the BSV network.
-         - Idempotent re-serve: if the gatekeeper recognizes a nonce_outpoint that was already accepted, it can serve the cached response without re-verifying the full transaction.
+         - Idempotent re-serve: if the gatekeeper recognizes a nonce_utxo that was already accepted, it can serve the cached response without re-verifying the full transaction.
 
        Properties:
          - The cache is NOT correctness-critical. If the cache is lost (crash, restart, eviction), the gatekeeper falls back to verifying the transaction against the BSV network. The protocol remains secure.
          - The cache is bounded. LRU eviction prevents unbounded memory growth.
-         - The cache key is the nonce_outpoint (txid:vout string). The cache value is the accepted txid.
+         - The cache key is the nonce_utxo outpoint (txid:vout string). The cache value is the accepted txid.
 
        Sizing guidance:
          - The cache should hold at least the number of nonces that could be in-flight (leased but not yet verified). A reasonable default is 10x the nonce pool size or 100,000 entries, whichever is larger.
@@ -136,7 +136,7 @@ skill:
     - Each nonce MUST be used in at most one challenge at a time (exclusive lease).
     - Nonce reservation MUST be atomic. Concurrent lease attempts for the same nonce MUST result in exactly one success.
     - Fee UTXO reservation at the delegator MUST be atomic.
-    - The gatekeeper MUST re-derive the challenge from the actual HTTP request during proof verification. It MUST NOT trust nonce_outpoint values from the proof without matching them against the expected challenge.
+    - The gatekeeper MUST re-derive the challenge from the actual HTTP request during proof verification. It MUST NOT trust nonce_utxo values from the proof without matching them against the expected challenge.
     - The operational replay cache is defence-in-depth. Loss of the cache MUST NOT cause the protocol to accept replayed proofs (the BSV network provides the ground truth).
     - A 409 broadcast response MUST cause the client to discard the proof and start a new 402 cycle. It MUST NOT be retried.
     - Expired nonce leases MUST return the nonce to the available pool only after verifying the nonce is still unspent on the network.

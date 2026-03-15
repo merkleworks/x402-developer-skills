@@ -138,5 +138,5 @@ See `skills/discovery/implement-x402-discovery/SKILL.md` for the full specificat
 | `X402-Challenge` | Server -> Client | Base64url-encoded challenge JSON |
 | `X402-Proof` | Client -> Server | Base64url-encoded proof JSON |
 | `X402-Accept` | Server -> Client | Supported payment schemes |
-| `X402-Receipt` | Server -> Client | SHA256(txid + ":" + challenge_hash) |
+| `X402-Receipt` | Server -> Client | SHA256(txid + ":" + challenge_sha256) |
 | `X402-Status` | Server -> Client | Mempool status: accepted, pending, rejected, error |

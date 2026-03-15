@@ -195,7 +195,7 @@ function verifyProof(
   // In production: verify nonce spend, payee output, mempool acceptance
   // (see verify-payment-proof.md skill for complete 16-step verification)
 
-  // Compute receipt: SHA256(txid + ":" + challenge_hash)
+  // Compute receipt: SHA256(txid + ":" + challenge_sha256)
   const receiptHash = sha256hex(proof.txid + ":" + proof.challenge_sha256)
 
   // Delete challenge (single-use)

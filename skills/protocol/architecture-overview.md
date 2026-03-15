@@ -36,7 +36,7 @@ skill:
     3. Layer 2 — Gatekeeper.
        Role: HTTP-layer payment gate. Generates challenges, verifies proofs, gates responses.
        Responsibilities:
-         - 402 challenge generation. When a request arrives without a valid X402-Proof header, the gatekeeper constructs a challenge JSON object containing: scheme, amount_sats, payee_locking_script_hex, nonce_outpoint, expiry_utc, and request binding fields (domain, method, path, query, req_headers_sha256, req_body_sha256).
+         - 402 challenge generation. When a request arrives without a valid X402-Proof header, the gatekeeper constructs a challenge JSON object containing: scheme, amount_sats, payee_locking_script_hex, nonce_utxo, expires_at, and request binding fields (domain, method, path, query, req_headers_sha256, req_body_sha256).
          - Request binding. The challenge cryptographically binds to the specific HTTP request by including deterministic hashes of the request headers and body. This prevents a proof generated for one request from being used on a different request.
          - Pricing. The gatekeeper determines the price for the requested resource (amount_sats). Pricing logic may be static, dynamic, or delegated to the service layer.
          - Proof verification. When a request arrives with an X402-Proof header, the gatekeeper executes the 16-step verification procedure to confirm the proof is valid, the transaction is broadcast, and the nonce is spent.
@@ -102,7 +102,7 @@ skill:
     - Combining gatekeeper and delegator into a single component. This violates separation invariants and creates a single point of compromise that holds both keys and HTTP context.
     - Having the delegator broadcast. The delegator returns the completed transaction to the client. The client broadcasts.
     - Having the gatekeeper sign transactions. The gatekeeper has no keys. If you need the gatekeeper to "approve" a transaction, the mechanism is proof verification, not signing.
-    - Assuming the delegator needs to know the HTTP request details. The delegator receives only: partial_tx_hex, challenge_hash, payee_locking_script_hex, amount_sats, nonce_outpoint.
+    - Assuming the delegator needs to know the HTTP request details. The delegator receives only: partial_tx, challenge_sha256, payee_locking_script_hex, amount_sats, nonce_utxo. Gateway implementations may accept legacy aliases (partial_tx_hex, challenge_hash, nonce_outpoint) for compatibility.
     - Treating Layer 4 (commercial) as part of the protocol. Billing and SLAs are out-of-band. They do not affect transaction validity or protocol correctness.
     - Scaling the delegator horizontally without coordinating UTXO state. Fee UTXOs are stateful resources. Concurrent delegator instances must coordinate to prevent double-allocation of fee UTXOs.
 

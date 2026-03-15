@@ -32,10 +32,11 @@ skill:
        - See add-x402-to-http-api skill for the full middleware procedure
     5. Implement the delegator endpoint:
        - Endpoint: POST /delegate/x402
-       - Accept request body: { partial_tx_hex, challenge_hash, payee_locking_script_hex, amount_sats, nonce_outpoint, template_mode }
+       - Accept request body: { partial_tx, challenge_sha256, payee_locking_script_hex, amount_sats, nonce_utxo, template_mode }
+        Gateway implementations may accept legacy aliases (partial_tx_hex, challenge_hash, nonce_outpoint) for compatibility.
        - Validation:
-         a. Verify challenge_hash exists in the challenge cache
-         b. Verify nonce_outpoint matches the challenge's nonce_utxo
+         a. Verify challenge_sha256 exists in the challenge cache
+         b. Verify nonce_utxo matches the challenge's nonce_utxo
          c. Parse partial_tx_hex and verify it contains the nonce input and payee output
          d. Verify payee output pays at least amount_sats to payee_locking_script_hex
        - Transaction completion:

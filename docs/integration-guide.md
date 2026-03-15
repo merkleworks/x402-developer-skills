@@ -172,7 +172,7 @@ Base64url-encode the proof JSON. Retry the original request with the `X402-Proof
 
 On success:
 - HTTP 200 with the API response body
-- `X402-Receipt` header contains `SHA256(txid + ":" + challenge_hash)`
+- `X402-Receipt` header contains `SHA256(txid + ":" + challenge_sha256)`
 - `X402-Status` header indicates mempool/confirmation status
 
 On failure:

@@ -4,7 +4,7 @@ skill:
   purpose: Describe how x402 deterministically binds a challenge to a specific HTTP request and how challenge hashes are computed.
   when_to_use: When implementing challenge generation, proof verification, or any component that must produce or validate request binding hashes and challenge hashes.
   inputs: An HTTP request (method, domain, path, query, headers, body) and a challenge JSON object.
-  outputs: req_headers_sha256, req_body_sha256, and challenge_hash — all as lowercase hex strings.
+  outputs: req_headers_sha256, req_body_sha256, and challenge_sha256 — all as lowercase hex strings.
   procedure:
     1. Define the binding fields.
        Every x402 challenge contains the following request binding fields:
@@ -65,17 +65,17 @@ skill:
 
        This value MUST be used explicitly. Do not omit the field or use null.
 
-    4. Compute challenge_hash.
-       The challenge_hash is the SHA-256 of the JCS-canonicalized challenge JSON.
+    4. Compute challenge_sha256.
+       The challenge_sha256 is the SHA-256 of the JCS-canonicalized challenge JSON.
 
        Step 4a — Start with the challenge JSON object.
-         The challenge JSON contains all fields: scheme, amount_sats, payee_locking_script_hex, nonce_outpoint, expiry_utc, domain, method, path, query, req_headers_sha256, req_body_sha256.
+         The challenge JSON contains all fields: scheme, amount_sats, payee_locking_script_hex, nonce_utxo, expires_at, domain, method, path, query, req_headers_sha256, req_body_sha256.
 
        Step 4b — Apply RFC 8785 JSON Canonicalization Scheme (JCS).
          JCS defines a deterministic serialization of JSON. The rules are:
 
          Rule 1: Sort object keys lexicographically by their Unicode code points. This sort is applied recursively to nested objects.
-           Example key order: "amount_sats" < "domain" < "expiry_utc" < "method" < ... < "scheme"
+           Example key order: "amount_sats" < "domain" < "expires_at" < "method" < ... < "scheme"
 
          Rule 2: No whitespace. No spaces or newlines between tokens. No space after colons or commas.
            Correct: {"amount_sats":1000,"domain":"api.example.com"}
@@ -96,8 +96,8 @@ skill:
              "scheme": "bsv-tx-v1",
              "amount_sats": 1000,
              "payee_locking_script_hex": "76a91489abcdefab012345678901234567890123456789088ac",
-             "nonce_outpoint": "abcd1234...ef56:0",
-             "expiry_utc": "2026-03-15T12:05:00Z",
+             "nonce_utxo": {"txid": "abcd1234...ef56", "vout": 0, "satoshis": 1, "locking_script_hex": "76a914...88ac"},
+             "expires_at": 1742040300,
              "domain": "api.example.com",
              "method": "GET",
              "path": "/api/v1/resource",
@@ -107,9 +107,9 @@ skill:
            }
 
          JCS-canonicalized (keys sorted, no whitespace):
-           {"amount_sats":1000,"domain":"api.example.com","expiry_utc":"2026-03-15T12:05:00Z","method":"GET","nonce_outpoint":"abcd1234...ef56:0","path":"/api/v1/resource","payee_locking_script_hex":"76a91489abcdefab012345678901234567890123456789088ac","query":"","req_body_sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","req_headers_sha256":"a1b2c3d4...64hex","scheme":"bsv-tx-v1"}
+           {"amount_sats":1000,"domain":"api.example.com","expires_at":1742040300,"method":"GET","nonce_utxo":{"locking_script_hex":"76a914...88ac","satoshis":1,"txid":"abcd1234...ef56","vout":0},"path":"/api/v1/resource","payee_locking_script_hex":"76a91489abcdefab012345678901234567890123456789088ac","query":"","req_body_sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","req_headers_sha256":"a1b2c3d4...64hex","scheme":"bsv-tx-v1"}
 
-         challenge_hash = SHA-256(UTF-8 bytes of the above string) -> lowercase hex
+         challenge_sha256 = SHA-256(UTF-8 bytes of the above string) -> lowercase hex
 
     5. Explain why deterministic binding matters.
 
@@ -135,7 +135,7 @@ skill:
     - JCS canonicalization MUST sort keys lexicographically by Unicode code points, recursively.
     - JCS output MUST contain no whitespace between tokens.
     - Integers MUST be serialized without decimal points or exponents.
-    - The challenge_hash MUST be the SHA-256 of the UTF-8 bytes of the JCS-canonicalized JSON, encoded as lowercase hex.
+    - The challenge_sha256 MUST be the SHA-256 of the UTF-8 bytes of the JCS-canonicalized JSON, encoded as lowercase hex.
     - During proof verification, the gatekeeper MUST re-derive binding fields from the actual HTTP request. It MUST NOT use values supplied by the client.
 
   common_errors:

@@ -179,10 +179,10 @@ def main() -> None:
         f"{DELEGATOR_URL}{DELEGATOR_PATH}",
         json={
             "partial_tx": partial_tx_hex,
-            "challenge_hash": challenge_hash,
+            "challenge_sha256": challenge_hash,
             "payee_locking_script_hex": challenge["payee_locking_script_hex"],
             "amount_sats": challenge["amount_sats"],
-            "nonce_outpoint": {
+            "nonce_utxo": {
                 "txid": nonce["txid"],
                 "vout": nonce["vout"],
                 "satoshis": nonce.get("satoshis", 1),

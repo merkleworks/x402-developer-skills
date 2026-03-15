@@ -3,21 +3,21 @@ skill:
   category: infrastructure
   purpose: Operate the delegator service that completes partial transactions by adding fee inputs without ever broadcasting.
   when_to_use: When deploying or debugging the delegator component that bridges client-signed partial transactions to broadcast-ready completed transactions.
-  inputs: A partial transaction hex from the client, the challenge hash, payee locking script, required amount, and nonce outpoint details.
+  inputs: A partial transaction hex from the client, the challenge hash, payee locking script, required amount, and nonce UTXO details.
   outputs: A completed transaction (hex and txid) with fee inputs attached, ready for client-side broadcast.
 
   procedure:
     1. Receive request at POST /delegate/x402.
        - Request body fields:
          - partial_tx_hex — hex-encoded partial transaction from the client.
-         - challenge_hash — SHA-256 hash of the original challenge JSON.
+         - challenge_sha256 — SHA-256 hash of the original challenge JSON. Gateway implementations may accept the legacy alias challenge_hash for compatibility.
          - payee_locking_script_hex — expected locking script for the payee output.
          - amount_sats — minimum required satoshi value for the payee output.
-         - nonce_outpoint — object with txid, vout, and satoshis identifying the nonce UTXO.
+         - nonce_utxo — object with txid, vout, and satoshis identifying the nonce UTXO.
          - template_mode — boolean indicating Profile B template transaction.
     2. Decode the partial transaction from hex to a transaction object.
     3. Verify exactly one nonce input is present in the transaction.
-       - The nonce input must match nonce_outpoint.txid and nonce_outpoint.vout.
+       - The nonce input must match nonce_utxo.txid and nonce_utxo.vout.
     4. Verify a payee output exists.
        - The output's locking script must equal payee_locking_script_hex (exact match).
        - The output's satoshi value must be greater than or equal to amount_sats.
@@ -26,7 +26,7 @@ skill:
        - If recorded with the same txid, this is an idempotent retry; proceed.
     6. Enforce sighash policy on existing inputs.
        - Profile A: all input signature hash types must be 0xC1 (SIGHASH_ALL|ANYONECANPAY|FORKID) or 0x41 (SIGHASH_ALL|FORKID).
-       - Profile B: input[0] must use 0xC3 (SIGHASH_ALL|ANYONECANPAY|FORKID with template flag), remaining inputs must use 0xC1 or 0x41.
+       - Profile B: input[0] must use 0xC3 (SIGHASH_SINGLE|ANYONECANPAY|FORKID), remaining inputs must use 0xC1 or 0x41.
        - Reject any input with a disallowed sighash type.
     7. Calculate the fee deficit.
        - Estimate completed transaction size: current size + (N fee inputs x 148 bytes) + change output (34 bytes).
@@ -48,7 +48,7 @@ skill:
     - Fee UTXOs must come from the fee pool, not the nonce pool. These pools are strictly separated.
     - Sighash enforcement is mandatory. A transaction with disallowed sighash types must be rejected before fee inputs are added.
     - The payee output check must use exact script comparison, not address comparison.
-    - The nonce outpoint must be gateway-issued. The delegator does not accept client-supplied nonce outpoints.
+    - The nonce UTXO must be gateway-issued. The delegator does not accept client-supplied nonce UTXOs.
     - Fee rate is configurable but defaults to 1 sat/byte on BSV mainnet.
 
   common_errors:
