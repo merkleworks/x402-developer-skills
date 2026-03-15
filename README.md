@@ -84,6 +84,17 @@ x402 is a stateless settlement-gated HTTP protocol. Core properties:
 - Deterministic request binding (method, path, query, headers, body)
 - Payment -> proof -> execution flow
 
+## Normative References
+
+**Normative specification**
+https://github.com/merkleworks/x402-spec
+
+**Reference implementation**
+https://github.com/merkleworks/x402-reference
+
+These documents define the authoritative protocol behavior.
+When resolving ambiguity: `specification > reference implementation > these skills`.
+
 ## Service Discovery
 
 Services supporting x402 should expose a discovery endpoint at:

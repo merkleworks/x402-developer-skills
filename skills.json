@@ -1,0 +1,25 @@
+{
+  "protocol": "x402",
+  "version": "1.0",
+  "description": "Developer skills for implementing the x402 stateless settlement-gated HTTP protocol",
+  "skills": [
+    "protocol/explain-x402-protocol",
+    "protocol/architecture-overview",
+    "protocol/protocol-flow",
+    "protocol/deterministic-binding",
+    "protocol/replay-protection",
+    "client/build-x402-client",
+    "client/call-x402-api",
+    "client/construct-payment-transaction",
+    "server/add-x402-to-http-api",
+    "server/implement-gateway",
+    "server/verify-payment-proof",
+    "infrastructure/run-x402-gateway",
+    "infrastructure/run-delegator",
+    "infrastructure/operate-nonce-mint",
+    "security/validate-proof",
+    "security/detect-double-spend",
+    "security/enforce-request-binding",
+    "discovery/implement-x402-discovery"
+  ]
+}

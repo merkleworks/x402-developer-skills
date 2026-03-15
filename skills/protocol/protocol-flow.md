@@ -23,32 +23,40 @@ skill:
 
        Challenge JSON structure (before base64url encoding):
          {
+           "v": "1",
            "scheme": "bsv-tx-v1",
            "amount_sats": 1000,
            "payee_locking_script_hex": "76a914...88ac",
-           "nonce_outpoint": "txid:vout",
-           "expiry_utc": "2026-03-15T12:05:00Z",
+           "expires_at": 1742040300,
            "domain": "api.example.com",
            "method": "GET",
            "path": "/api/v1/resource",
            "query": "",
            "req_headers_sha256": "a1b2c3...hex",
-           "req_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+           "req_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+           "nonce_utxo": {
+             "txid": "abcdef0123456789...",
+             "vout": 0,
+             "satoshis": 1,
+             "locking_script_hex": "76a914...88ac"
+           },
+           "require_mempool_accept": true,
+           "confirmations_required": 0
          }
 
        The req_body_sha256 for an empty body is the SHA-256 of the empty string.
-       The nonce_outpoint is a 1-sat UTXO minted and owned by the gatekeeper.
+       The nonce_utxo is a 1-sat UTXO minted and owned by the gatekeeper.
 
     3. Step 3 — Client parses and validates the challenge.
        The client base64url-decodes the X402-Challenge header, parses the JSON, and validates:
          - scheme is "bsv-tx-v1" (or a scheme the client supports)
-         - expiry_utc is in the future
+         - expires_at (unix timestamp) is in the future
          - amount_sats is acceptable to the client
-         - nonce_outpoint references a valid outpoint format (64-char hex txid + ":" + integer vout)
+         - nonce_utxo contains a valid object with txid (64-char hex) and vout (integer)
 
     4. Step 4 — Client builds partial transaction.
        The client constructs a partial BSV transaction:
-         - input[0]: nonce UTXO (from nonce_outpoint in the challenge). The client creates an unsigned input referencing this outpoint.
+         - input[0]: nonce UTXO (from nonce_utxo in the challenge). The client creates an unsigned input referencing this outpoint.
          - output[0]: payee output. Locking script = payee_locking_script_hex from the challenge. Value >= amount_sats from the challenge.
          - Additional inputs: the client's payment UTXOs (signed by the client).
          - Additional outputs: change output(s) as needed.
@@ -66,7 +74,7 @@ skill:
          "challenge_hash": "sha256-of-jcs-canonicalized-challenge-json-hex",
          "payee_locking_script_hex": "76a914...88ac",
          "amount_sats": 1000,
-         "nonce_outpoint": "txid:vout"
+         "nonce_utxo": { "txid": "abcdef0123456789...", "vout": 0 }
        }
 
        The challenge_hash is computed by:
@@ -79,7 +87,7 @@ skill:
     6. Step 6 — Delegator validates, adds fee inputs, returns completed transaction.
        The delegator performs the following:
          a. Deserializes the partial transaction.
-         b. Validates input[0] references the declared nonce_outpoint.
+         b. Validates input[0] references the declared nonce_utxo.
          c. Validates output[0] pays the declared payee_locking_script_hex with value >= amount_sats.
          d. Validates the challenge_hash against the declared parameters.
          e. Checks policy constraints (max fee, allowed script types, tx size limits).
@@ -116,10 +124,19 @@ skill:
 
        Proof JSON structure (before base64url encoding):
          {
+           "v": "1",
            "scheme": "bsv-tx-v1",
            "txid": "final-txid-hex",
-           "rawtx_hex": "0100000001...complete",
-           "nonce_outpoint": "txid:vout"
+           "rawtx_b64": "AQAAAAE...",
+           "challenge_sha256": "def456...",
+           "request": {
+             "domain": "api.example.com",
+             "method": "GET",
+             "path": "/api/v1/resource",
+             "query": "",
+             "req_headers_sha256": "a1b2c3...hex",
+             "req_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+           }
          }
 
     9. Step 9 — Server verifies proof and returns gated response.
@@ -128,18 +145,18 @@ skill:
          b. Validate scheme is "bsv-tx-v1".
          c. Deserialize rawtx_hex into a transaction.
          d. Verify the computed txid matches the declared txid.
-         e. Verify input[0] references the nonce_outpoint from the original challenge.
+         e. Verify input[0] references the nonce_utxo from the original challenge.
          f. Verify output[0] pays the payee_locking_script_hex with value >= amount_sats.
          g. Re-derive the challenge from the current request's binding fields (domain, method, path, query, headers hash, body hash).
          h. Compute the challenge_hash from the re-derived challenge using JCS + SHA-256.
          i. Verify the challenge_hash matches the one embedded or expected.
-         j. Verify the nonce_outpoint has not been previously accepted (optional LRU cache check).
+         j. Verify the nonce_utxo has not been previously accepted (optional LRU cache check).
          k. Verify the transaction is visible in the mempool or a block (broadcast confirmation).
          l. Verify the nonce UTXO is spent (confirms the transaction was actually mined or mempool-accepted).
          m. Verify all signatures in the transaction are valid.
          n. Verify the transaction is not malformed (no extra unexpected outputs, script sizes within bounds).
-         o. Verify expiry_utc has not passed.
-         p. Record the nonce_outpoint as accepted.
+         o. Verify expires_at has not passed.
+         p. Record the nonce_utxo as accepted.
 
        If verification passes:
          - Forward the request to the service.
@@ -169,7 +186,7 @@ skill:
           |    {partial_tx_hex,  |                    |                  |
           |     challenge_hash,  |                    |                  |
           |     payee, amount,   |                    |                  |
-          |     nonce_outpoint}  |                    |                  |
+          |     nonce_utxo}      |                    |                  |
           |                      |                    |                  |
           |<-- {txid, rawtx_hex, accepted} ----------|                  |
           |                      |                    |                  |
@@ -207,7 +224,7 @@ skill:
     - Reusing a challenge after expiry. The nonce lease has a TTL. Expired challenges must be discarded and a new 402 cycle initiated.
     - Trusting the proof's embedded challenge data. The gatekeeper must re-derive the challenge from the actual HTTP request, not from data the client supplies in the proof.
     - Ignoring broadcast response codes. A 409 (double-spend) means the nonce or fee UTXO was already spent. The client must request a new challenge.
-    - Omitting the nonce_outpoint from the proof. The gatekeeper needs this to match the proof to the original challenge.
+    - Omitting the challenge_sha256 from the proof. The gatekeeper needs this to match the proof to the original challenge.
     - Using the wrong SIGHASH flag. Fee inputs use 0xC1 (ALL|ANYONECANPAY). Profile B nonce pre-sign uses 0xC3 (SINGLE|ANYONECANPAY). Mixing these corrupts the transaction.
 
   references:

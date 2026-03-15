@@ -16,18 +16,18 @@ skill:
           {
             "v": "1",
             "scheme": "bsv-tx-v1",
-            "nonce_utxo": { "txid": "<nonce txid>", "vout": <nonce vout>, "satoshis": <nonce satoshis> },
-            "payee_locking_script_hex": "<payee script hex>",
             "amount_sats": <price>,
+            "payee_locking_script_hex": "<payee script hex>",
             "expires_at": <current unix timestamp + challenge TTL>,
-            "request": {
-              "domain": "<request host>",
-              "method": "<request method>",
-              "path": "<request path>",
-              "query": "<request query string or empty>",
-              "req_headers_sha256": "<SHA-256 hex of canonicalized bound headers>",
-              "req_body_sha256": "<SHA-256 hex of request body>"
-            }
+            "domain": "<request host>",
+            "method": "<request method>",
+            "path": "<request path>",
+            "query": "<request query string or empty>",
+            "req_headers_sha256": "<SHA-256 hex of canonicalized bound headers>",
+            "req_body_sha256": "<SHA-256 hex of request body>",
+            "nonce_utxo": { "txid": "<nonce txid>", "vout": <nonce vout>, "satoshis": <nonce satoshis> },
+            "require_mempool_accept": true,
+            "confirmations_required": 0
           }
        d. Compute the challenge hash:
           - Serialize the challenge JSON using RFC 8785 JSON Canonicalization Scheme (JCS)
